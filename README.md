@@ -31,7 +31,7 @@ The platform outlives **any individual service** and is independent of business 
 ## Relation to Other Repositories and Bootstrap
 
 - This repository is **not cloned directly** during cluster initialization with [ansible-gitops-bootstrap-health-api](https://github.com/vikgur/ansible-gitops-bootstrap-health-api-english-vers).  
-- Instead, it is connected **as a child application** from [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers) — via the `Application` object defined in [apps/platform-apps.yaml](https://github.com/Vikgur/argocd-config-health-api-english-vers/-/blob/main/apps/platform-apps.yaml).  
+- Instead, it is connected **as a child application** from [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers) — via the `Application` object defined in [apps/platform-apps.yaml](https://github.com/Vikgur/argocd-config-health-api-english-vers/blob/main/apps/platform-apps.yaml).  
 - This approach allows:
   - centralized management of all sources in [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers),  
   - separation of platform components from user applications,  
