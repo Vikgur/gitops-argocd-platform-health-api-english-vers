@@ -10,6 +10,13 @@
     - [external-secrets.yaml — secrets from the cloud](#external-secretsyaml--secrets-from-the-cloud)  
     - [monitoring.yaml — metrics and alerts](#monitoringyaml--metrics-and-alerts)  
     - [policy-engine.yaml — security policies](#policy-engineyaml--security-policies)  
+- [Implemented DevSecOps Practices](#implemented-devsecops-practices)  
+  - [Security linting & validation](#security-linting--validation)  
+    - [.yamllint.yml](#yamllintyml)  
+    - [.checkov.yaml](#checkovyaml)  
+    - [policy/argo/secure-apps.rego](#policyargosecure-appsrego)  
+    - [.gitleaks.toml](#gitleakstoml)  
+    - [.pre-commit-config.yaml](#pre-commit-configyaml)  
 
 ---
 
@@ -31,7 +38,7 @@ The platform outlives **any individual service** and is independent of business 
 ## Relation to Other Repositories and Bootstrap
 
 - This repository is **not cloned directly** during cluster initialization with [ansible-gitops-bootstrap-health-api](https://github.com/vikgur/ansible-gitops-bootstrap-health-api-english-vers).  
-- Instead, it is connected **as a child application** from [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers) — via the `Application` object defined in [apps/platform-apps.yaml](https://github.com/Vikgur/argocd-config-health-api-english-vers/blob/main/apps/platform-apps.yaml).  
+- Instead, it is connected **as a child application** from [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers) — via the `Application` object defined in [apps/platform-apps.yaml](https://github.com/Vikgur/argocd-config-health-api-english-vers/-/blob/main/apps/platform-apps.yaml).  
 - This approach allows:
   - centralized management of all sources in [argocd-config-health-api](https://github.com/Vikgur/argocd-config-health-api-english-vers),  
   - separation of platform components from user applications,  
@@ -92,3 +99,54 @@ Provides cluster and service observability, supports metrics for rollout strateg
 **Purpose:**  
 Deploys `kyverno` — a Policy-as-Code engine.  
 Applies policies to Kubernetes objects: annotation checks, blocking privileged containers, enforce logic, and more.
+
+# Implemented DevSecOps Practices
+
+This repository includes a set of DevSecOps tools to ensure quality and security control of GitOps manifests.
+
+## Security linting & validation
+
+### `.yamllint.yml`
+
+**Purpose:**  
+Checks YAML syntax and style.  
+Prevents formatting errors and enforces a consistent standard.
+
+---
+
+### `.checkov.yaml`
+
+**Purpose:**  
+Analyzes Kubernetes manifests with Checkov.  
+Detects insecure practices: using `latest` images, missing resource limits, misconfigured Ingress, etc.
+
+---
+
+### `policy/argo/secure-apps.rego`
+
+**Purpose:**  
+OPA policies for Argo CD `Application`.  
+They prohibit:  
+- using `targetRevision: HEAD`,  
+- disabling `prune` and `selfHeal` in `syncPolicy`.  
+Ensures correct and secure configuration of Argo CD applications.
+
+---
+
+### `.gitleaks.toml`
+
+**Purpose:**  
+Scans commits and files for secrets.  
+Prevents leakage of tokens, passwords, and other sensitive data into Git.
+
+---
+
+### `.pre-commit-config.yaml`
+
+**Purpose:**  
+Runs automated checks before commit (`yamllint`, `checkov`, `gitleaks`).  
+Helps detect issues before changes are merged into the repository.
+
+---
+
+> As a result, the repository gains baseline DevSecOps coverage: from YAML syntax and style validation to secret scanning and Argo CD security policy enforcement.
