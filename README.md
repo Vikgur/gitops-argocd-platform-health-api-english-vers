@@ -4,12 +4,16 @@
   - [Relation to Other Repositories and Bootstrap](#relation-to-other-repositories-and-bootstrap)  
 - [Architecture](#architecture)  
   - [apps/](#apps)  
-    - [ingress-nginx.yaml — entry point](#ingress-nginxyaml--entry-point)  
+    - [argo-rollouts.yaml — blue/green and canary deployment](#argo-rolloutsyaml--bluegreen-and-canary-deployment)  
+    - [argocd-image-updater.yaml — automatic image updates](#argocd-image-updateryaml--automatic-image-updates)  
     - [cert-manager.yaml — automatic TLS](#cert-manageryaml--automatic-tls)  
-    - [argo-rollouts.yaml — bluegreen and canary deployment](#argo-rolloutsyaml--bluegreen-and-canary-deployment)  
-    - [external-secrets.yaml — secrets from the cloud](#external-secretsyaml--secrets-from-the-cloud)  
+    - [external-secrets.yaml — cloud secrets](#external-secretsyaml--cloud-secrets)  
+    - [ingress-nginx.yaml — entry point](#ingress-nginxyaml--entry-point)  
     - [monitoring.yaml — metrics and alerts](#monitoringyaml--metrics-and-alerts)  
     - [policy-engine.yaml — security policies](#policy-engineyaml--security-policies)  
+  - [argocd-image-updater](#argocd-image-updater)  
+    - [argocd-image-updater-config.yaml](#argocd-image-updater-configyaml)  
+    - [secret.yaml](#secretyaml)  
 - [Implemented DevSecOps Practices](#implemented-devsecops-practices)  
   - [Security linting & validation](#security-linting--validation)  
     - [.yamllint.yml](#yamllintyml)  
@@ -24,10 +28,11 @@
 
 This repository is the **App of Apps** for the production GitOps platform of [`health-api`](https://github.com/vikgur/health-api-for-microservice-stack-english-vers). It defines system Argo CD applications (`kind: Application`) for the core components required **before microservices are deployed**:
 
-- `ingress-nginx` — entry point  
-- `cert-manager` — automatic TLS  
 - `argo-rollouts` — deployment strategies  
-- `external-secrets` — secrets from the cloud  
+- `argocd-image-updater` — automatic image tag updates with strategy and signature verification  
+- `cert-manager` — automatic TLS  
+- `external-secrets` — cloud secrets  
+- `ingress-nginx` — entry point  
 - `kube-prometheus-stack` — monitoring  
 - `kyverno` — security policies  
 
@@ -54,13 +59,18 @@ Each file in the `apps/` directory is a separate Argo CD application (`Applicati
 
 ## `apps/`
 
-### `ingress-nginx.yaml` — entry point
+### `argo-rollouts.yaml` — blue/green and canary deployment
 
 **Purpose:**  
-Deploys `ingress-nginx` — the main Ingress controller.  
-Handles external HTTP/HTTPS traffic and routes it to services.
+Deploys `argo-rollouts` for advanced deployment strategies.  
+Supports `blueGreen`, `canary`, `step analysis`, manual promotion, and rollbacks.
 
----
+### `argocd-image-updater.yaml` — automatic image updates
+
+**Purpose:**  
+Deploys the Argo Image Updater component via a Helm chart.  
+This service tracks new image tags in the container registry, verifies signatures (`cosign`), and updates Argo CD Applications with the latest versions.  
+Works together with the manifests in the `argocd-image-updater/` directory (ConfigMap and Secret).
 
 ### `cert-manager.yaml` — automatic TLS
 
@@ -68,23 +78,17 @@ Handles external HTTP/HTTPS traffic and routes it to services.
 Deploys `cert-manager`, which automatically obtains and renews TLS certificates (e.g., from Let's Encrypt).  
 Required for HTTPS and secure interaction with external services.
 
----
-
-### `argo-rollouts.yaml` — blue/green and canary deployment
-
-**Purpose:**  
-Deploys `argo-rollouts` for advanced deployment strategies.  
-Supports `blueGreen`, `canary`, `step analysis`, manual promotion, and rollbacks.
-
----
-
 ### `external-secrets.yaml` — secrets from the cloud
 
 **Purpose:**  
 Deploys `external-secrets` — a component that synchronizes Kubernetes `Secrets` with external Secret Managers (e.g., Yandex Cloud, HashiCorp Vault).  
 Eliminates the need to store secrets in Git.
 
----
+### `ingress-nginx.yaml` — entry point
+
+**Purpose:**  
+Deploys `ingress-nginx` — the main Ingress controller.  
+Handles external HTTP/HTTPS traffic and routes it to services.
 
 ### `monitoring.yaml` — metrics and alerts
 
@@ -92,13 +96,33 @@ Eliminates the need to store secrets in Git.
 Deploys `kube-prometheus-stack`: Prometheus, Grafana, node-exporter, alerts, and dashboards.  
 Provides cluster and service observability, supports metrics for rollout strategies.
 
----
-
 ### `policy-engine.yaml` — security policies
 
 **Purpose:**  
 Deploys `kyverno` — a Policy-as-Code engine.  
 Applies policies to Kubernetes objects: annotation checks, blocking privileged containers, enforce logic, and more.
+
+---
+
+## `argocd-image-updater`
+
+Configuration and secrets for running Argo Image Updater.
+
+### `argocd-image-updater-config.yaml`
+
+**Purpose:**  
+Defines the global settings for Argo Image Updater.  
+Specifies the container registries in use, authentication parameters, and image signature verification (`cosign`).  
+Applied in the `argocd` namespace.
+
+### `secret.yaml`
+
+**Purpose:**  
+Contains credentials for accessing GitHub Container Registry (GHCR).  
+Used by Argo Image Updater to read tag information and related signatures.  
+Created as a Kubernetes Secret in the `argocd` namespace.
+
+---
 
 # Implemented DevSecOps Practices
 
