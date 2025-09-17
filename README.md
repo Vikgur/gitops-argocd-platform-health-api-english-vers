@@ -14,6 +14,7 @@
   - [argocd-image-updater](#argocd-image-updater)  
     - [argocd-image-updater-config.yaml](#argocd-image-updater-configyaml)  
     - [secret.yaml](#secretyaml)  
+    - [Integration steps into health-api ](#integration-steps-into-health-api)
 - [Implemented DevSecOps Practices](#implemented-devsecops-practices)  
   - [Security linting & validation](#security-linting--validation)  
     - [.yamllint.yml](#yamllintyml)  
@@ -121,6 +122,24 @@ Applied in the `argocd` namespace.
 Contains credentials for accessing GitHub Container Registry (GHCR).  
 Used by Argo Image Updater to read tag information and related signatures.  
 Created as a Kubernetes Secret in the `argocd` namespace.
+
+### Integration steps into health-api 
+
+1. **Dockerfile**  
+   Add standard OCI labels (`source`, `revision`, `created`) to each service (backend, frontend).  
+   These labels allow Argo Image Updater to track the origin and freshness of images.
+
+2. **Helm values**  
+   In the `helm-blue-green-canary-gitops-health-api` repository, configure `image.repository` and Argo Image Updater annotations for each service (e.g., `helm/values/backend.yaml`).  
+   This tells AIU which images to update and according to which rules.
+
+3. **ConfigMap**  
+   In the `gitops-argocd-platform-health-api` repository, create `argocd-image-updater-config.yaml` with global configuration.  
+   It defines which registries AIU works with and where the cosign key for signature verification is stored.
+
+4. **Secret**  
+   In the same repository, add a `Secret` with credentials for accessing GHCR.  
+   This secret is used by AIU to fetch tag and signature information.
 
 ---
 
